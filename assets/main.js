@@ -1,3 +1,4 @@
+// Khai báo cấu trúc dữ liệu cây thư mục và file
 const trees = [
   {
     type: "folder",
@@ -132,17 +133,22 @@ const trees = [
   { type: "file", name: "index.html" },
 ];
 
+// Lấy phần tử sidebar và content từ DOM
 const sidebar = document.querySelector(".sidebar");
 const content = document.querySelector(".content");
 
+// Hàm hiển thị context menu (menu chuột phải) tại vị trí (x, y) cho phần tử targetEl
 function contextMenu(x, y, targetEl) {
+  // Xóa sạch tất cả các phần tử con trong content (menu)
+  content.innerHTML = "";
 
-  // Rename
+  // Tạo nút Rename
   const renameConfigs = document.createElement("div");
   renameConfigs.className = "rename";
   renameConfigs.textContent = "Rename";
+  // Khi click Rename, thay tên thư mục bằng input để sửa
   renameConfigs.onclick = function () {
-    content.classList.add("hide");
+    content.classList.add("hide"); // Ẩn menu
     const input = document.createElement("input");
     input.type = "text";
     input.value = targetEl.textContent;
@@ -151,87 +157,85 @@ function contextMenu(x, y, targetEl) {
     input.focus();
     input.onkeydown = function (e) {
       if (e.key === "Enter") {
-        targetEl.textContent = input.value;
+        targetEl.textContent = input.value; // Đổi tên thư mục
       }
     };
   };
 
-  //Delete
+  // Tạo nút Delete
   const deleteConfigs = document.createElement("div");
   deleteConfigs.className = "delete";
   deleteConfigs.textContent = "Delete";
+  // Thêm 2 nút vào content (menu)
   content.append(renameConfigs, deleteConfigs);
+  // Đặt vị trí menu
   content.style.overflow = "hidden";
   content.style.top = `${y}px`;
   content.style.left = `${x}px`;
   content.classList.remove("hide");
+  // Khi click Delete, xóa thư mục cha của targetEl
   deleteConfigs.onclick = (e) => {
     e.preventDefault();
     e.stopPropagation();
     content.classList.add("hide");
-    // const folderEl = targetEl.closest(".folder");
-    // if (folderEl && folderEl.parentNode) {
-    //   sidebar.removeChild(folderEl);
-    //   console.log(targetEl);
-    // }
-    
-    // if (targetEl.parentElement) {
-    //   targetEl.parentElement.remove();
-    // }
-    console.log(targetEl.parentElement);
-    
+    if (targetEl.parentElement) {
+      targetEl.parentElement.remove();
+    }
   };
 }
 
+// Hàm đệ quy để render cây thư mục ra DOM
 function renderTree(tree, parent) {
   tree.forEach((item) => {
-    // console.log(item.type);
+    // Tạo 1 div cho mỗi item (folder/file)
     let el = document.createElement("div");
 
     if (item.type === "folder") {
-      // console.log(el);
+      // Nếu là folder
       el.className = "folder";
       el.innerHTML = `<div class="folder-name">${item.name}</div>`;
-      // el.innerHTML = `<div class="folder">${item.name}</div>`;
-      // Children container
+      // Tạo container cho các con
       const childrenContainer = document.createElement("div");
       childrenContainer.className = "children hide";
+      // Nếu có children thì render tiếp
       if (item.children && item.children.length) {
         renderTree(item.children, childrenContainer);
       }
       el.appendChild(childrenContainer);
 
-      // Toggle & highlight chỉ .folder-name
+      // Lấy phần tử tên folder
       const folderNameEl = el.querySelector(".folder-name");
-      // console.log(folderNameEl);
 
+      // Sự kiện click: hiện/ẩn con, highlight
       folderNameEl.addEventListener("click", (e) => {
-        e.stopPropagation();
-        childrenContainer.classList.toggle("hide");
-
-        // Highlight chỉ .folder-name
-        folderNameEl.classList.toggle("active");
-        // folderNameEl.classList.add("active");
+        e.stopPropagation(); // Ngăn sự kiện nổi lên cha
+        childrenContainer.classList.toggle("hide"); // Ẩn/hiện con
+        folderNameEl.classList.toggle("active"); // Highlight tên folder
       });
 
+      // Sự kiện chuột phải: mở context menu
       folderNameEl.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         e.stopPropagation();
         contextMenu(e.pageX, e.pageY, folderNameEl);
       });
     } else {
+      // Nếu là file
       el = document.createElement("div");
       el.className = "file";
       el.textContent = item.name;
     }
+    // Thêm node vừa tạo vào parent
     parent.appendChild(el);
   });
 }
 
+// Khi click ra ngoài menu thì ẩn menu
 document.addEventListener("mousedown", (e) => {
   if (!content.contains(e.target)) {
     content.classList.add("hide");
   }
 });
 
+// Render cây thư mục ra sidebar khi load trang
 renderTree(trees, sidebar);
